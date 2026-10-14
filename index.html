@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telegram LIFO Download - Array Demo</title>
+<style>
+body{font-family:Arial;background:#0f1419;color:white;padding:20px}
+.card{background:#1e2c3a;padding:15px;border-radius:12px;margin:10px 0;border-left:5px solid #2aabee}
+.running{border-left-color:#00ff88;animation:pulse 1s infinite}
+.waiting{border-left-color:#ffaa00;opacity:0.6}
+.finished{border-left-color:#555;opacity:0.3}
+@keyframes pulse{0%{opacity:1}50%{opacity:0.7}}
+button{background:#2aabee;color:white;border:none;padding:12px 20px;border-radius:8px;margin:5px;font-weight:bold}
+#stack{font-family:monospace;background:black;padding:10px;border-radius:8px;color:#00ff88}
+</style>
+</head>
+<body>
+
+<h2>📥 Telegram Download Manager</h2>
+<p>Array as Stack (LIFO) - Preemptive Priority Scheduling</p>
+
+<div id="stack">array = []</div>
+
+<button onclick="add('Season 1')">Tap Season 1</button>
+<button onclick="add('Season 2')">Tap Season 2</button>
+<button onclick="add('Season 3')">Tap Season 3</button>
+<button onclick="finish()">Finish Top (Pop)</button>
+
+<div id="list"></div>
+
+<p id="explain"></p>
+
+<script>
+// THIS IS THE REQUIRED ARRAY
+let downloadStack = []; // Array used as Stack - mandatory
+
+function add(name){
+  // Preempt current RUNNING -> WAITING
+  if(downloadStack.length > 0){
+    downloadStack[downloadStack.length-1].state = 'WAITING';
+  }
+  // Push to top of stack - O(1) with array
+  downloadStack.push({name:name, progress: Math.floor(Math.random()*30+10), state:'RUNNING'});
+  render();
+}
+
+function finish(){
+  if(downloadStack.length==0) return;
+  downloadStack.pop(); // Stack unwind - prevents starvation
+  if(downloadStack.length>0){
+    downloadStack[downloadStack.length-1].state='RUNNING';
+  }
+  render();
+}
+
+function render(){
+  let html = '';
+  // LIFO: Show from top to bottom
+  for(let i=downloadStack.length-1; i>=0; i--){
+    let d = downloadStack[i];
+    let cls = d.state.toLowerCase();
+    html += `<div class="card ${cls}"><b>${d.name}</b> - ${d.state} - ${d.progress}% ${i==downloadStack.length-1?'← TOP [array.length-1]':''}</div>`;
+  }
+  document.getElementById('list').innerHTML = html;
+  document.getElementById('stack').innerText = `array = [${downloadStack.map(s=>s.name+':'+s.state).join(', ')}] // length=${downloadStack.length}, top = array[${downloadStack.length-1}]`;
+
+  let exp = '';
+  if(downloadStack.length>1){
+    exp = `Preemption happened: ${downloadStack[downloadStack.length-1].name} preempted others. RUNNING -> WAITING. This is LIFO, not FCFS. Starvation prevented by stack unwind (pop).`;
+  }
+  document.getElementById('explain').innerText = exp;
+}
+</script>
+
+<h3>Why Array is Necessary Here:</h3>
+<ul>
+<li><b>O(1) top access:</b> array[length-1] is current download</li>
+<li><b>Push/Pop:</b> Preemption & finish = O(1)</li>
+<li><b>Contiguous PCB:</b> All download states in cache</li>
+</ul>
+
+</body>
+</html>
